@@ -29,7 +29,7 @@ class QueueFinder():
         global isDoneQueing
         while not isDoneQueing:
             print(f'{currentTime}, {maxValStr}, {self.isDone}')
-            if window:
+            if window.isQueing:
                 window.setStatusQueue(f'{currentTime}, {maxValStr}')
 
             arr = [int(i) for i in  currentTime.split(':')]
@@ -85,7 +85,7 @@ class QueueFinder():
 
         inQueueImg = cv2.imread('./src/inQueue.png', cv2.IMREAD_GRAYSCALE)
 
-        sleepTime = 3
+        sleepTime = 1
 
         global currentTime
         currentTime = '0:01'
@@ -100,8 +100,11 @@ class QueueFinder():
             self.isDone = self.findQueue(buttonImg, weight, height, inQueueImg, sleepTime, window)
 
         isDoneQueing = True
-        if window.config.chatId and window.config.writableToChat:
-            requests.get('https://api.telegram.org/bot6736595463:AAHB4szAPZfjbmkTteu73n3aHj1RT1t1dVg/sendMessage?chat_id='+window.config.chatId+'&text=Игра найдена!')
+        if window.isQueing:
+            window.queueFinder.isDone = True
+            window.endQueue()
+            if window.config.chatId and window.config.writableToChat:
+                requests.get('https://api.telegram.org/bot6736595463:AAHB4szAPZfjbmkTteu73n3aHj1RT1t1dVg/sendMessage?chat_id='+window.config.chatId+'&text=Игра найдена!')
 
 def main(window = None):
     queueFinder = QueueFinder()

@@ -6,6 +6,7 @@ import webbrowser
 from threading import Thread
 
 from mainWithClasses import main as QueueLogic
+from mainWithClasses import QueueFinder
 from config import Config
 from bot import main as telegramBot
 from createImages import create, doesImagesExists
@@ -17,6 +18,7 @@ class MainWindow(QMainWindow):
         self.ui.setupUi(self)
 
         self.config = Config()
+        self.isQueing = False
 
         if self.config.isFirstLaunch:
             create('./src/acceptQueueExample.png', 'https://i.ibb.co.com/vZYKXcx/acceptQueue.png')
@@ -28,16 +30,32 @@ class MainWindow(QMainWindow):
         self.ui.le_accept_queue_sensitivity.setText(f'{self.config.queueSencitivity}')
 
         QFontDatabase.addApplicationFont('fonts/Rubik-Regular.ttf')
+
         if self.config.writableToChat:
             self.ui.checkBox.click()
         self.ui.btn_find_game.clicked.connect(lambda: self.findQueue())
         self.ui.btn_write_bot.clicked.connect(lambda: self.writeToBot())
         self.ui.btn_set_id.clicked.connect(lambda: self.setData(self.ui.le_chat_id.text(), self.ui.le_accept_queue_sensitivity.text(), self.ui.le_in_queue_sensitivity.text(), self.ui.checkBox.isChecked()))
-        
+    
+    def endQueue(self) -> None:
+        self.queueFinder.isDone = True
+        del self.queueFinder
+        self.ui.btn_find_game.setText('Найти Игру')
+        self.isQueing = False
+        self.setStatusQueue('не в поиске')
+
+    def startQueue(self) -> None:
+        self.queueFinder = QueueFinder()
+        Thread(target=lambda: self.queueFinder.main(self), daemon=True).start()
+        self.ui.btn_find_game.setText('Отменить Поиск')
+        self.isQueing = True    
+
     def findQueue(self):
         if doesImagesExists():
-            Thread(target=lambda: QueueLogic(self), daemon=True).start()
-            
+            if not self.isQueing:
+                self.startQueue()
+            else:
+                self.endQueue()
         else:
             self.openDialogWindow('Ошибка', 'Изображения не были созданы!')
     def writeToBot(self):
